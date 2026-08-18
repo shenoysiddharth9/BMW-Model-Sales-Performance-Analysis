@@ -1,193 +1,405 @@
-# BMW-Model-Sales-Performance-Analysis
-import matplotlib.pyplot as plt
-import pandas as pd
-import numpy as np
-import seaborn as sns
-import scipy.stats as stats
+# BMW Model Sales Performance Analysis
 
-# Data Source - https://www.kaggle.com/datasets/ahmadrazakashif/bmw-worldwide-sales-records-20102024
+## Project Overview
 
-df=pd.read_csv('C:\\BMW.csv')
+This project analyzes worldwide BMW vehicle sales data to identify patterns in **sales performance, pricing, fuel type, transmission, vehicle models, and regional demand**.
 
-#2.	Data Cleaning: 
-#This is to fill the missing numeric values in the data with mean
-display(df.isnull().sum())
-df.fillna(df.select_dtypes(include="number").mean(), inplace=True)  
-# display(df)
+The analysis combines **data cleaning, exploratory data analysis, visualization, correlation analysis, statistical hypothesis testing, and time-series analysis** to transform raw automotive sales data into actionable business insights.
 
-#This is to drop any remaining missing values which have not be been filled
-df.dropna(inplace = True)
-print("data after dropping any data (if applicable):-")
-display(df)
+The goal of the project is to understand the factors associated with BMW sales and pricing and use those findings to support decisions related to **regional strategy, product positioning, pricing, and inventory planning**.
 
-# Checked for duplicate values in the DataFrame.
-display(df.duplicated().sum())
-df.drop_duplicates()
+---
 
-#Identifying and Handling Outliers for Price_USD Column.
-Q1 = df['Price_USD'].quantile(0.25)
-Q3 = df['Price_USD'].quantile(0.75)
-IQR = Q3 - Q1
-lower_bound = Q1 - 1.5 * IQR
-upper_bound = Q3 + 1.5 * IQR
-outliers_iqr = df[(df['Price_USD'] < lower_bound) | (df['Price_USD'] > upper_bound)]
-print(f'\nThe outliers for price_usd are:-')
-display(outliers_iqr)
-df = df[(df['Price_USD'] >= lower_bound) & (df['Price_USD'] <= upper_bound)]
-display(df)
+## Business Problem
 
-#Identifying and Handling Outliers for Sales_Volume Column.
-Q1 = df['Sales_Volume'].quantile(0.25)
-Q3 = df['Sales_Volume'].quantile(0.75)
-IQR = Q3 - Q1
-lower_bound = Q1 - 1.5 * IQR
-upper_bound = Q3 + 1.5 * IQR
-outliers_iqr = df[(df['Sales_Volume'] < lower_bound) | (df['Sales_Volume'] > upper_bound)]
-print(f'\nThe outliers for Sales_Volume are:-')
-display(outliers_iqr)
-df = df[(df['Sales_Volume'] >= lower_bound) & (df['Sales_Volume'] <= upper_bound)]
-display(df)
+Automotive manufacturers operate across different regions, vehicle segments, fuel technologies, and pricing levels. Understanding how these factors relate to sales performance can help organizations make better strategic decisions.
 
-#3.	Exploratory Data Analysis (EDA): 
-#Descriptive Statistics
-display(df.drop(columns=['Year','Engine_Size_L']).describe())
+This project focuses on answering questions such as:
 
+* Which BMW models demonstrate stronger sales performance?
+* How does vehicle pricing vary across geographic regions?
+* Are average BMW prices significantly different across fuel types?
+* Are average prices significantly different across regions?
+* Is there an association between fuel type and transmission type?
+* What relationships exist among engine size, mileage, price, and sales volume?
+* How has BMW sales volume changed over time?
+* What insights can be used to improve regional marketing and inventory decisions?
 
-# Data Visualization
-#Boxplot: Volume of Sales By Model
-print("We used boxplots to compare spread, median, and outliers of units sold across various BMW models.\n"
-    "Compared to bar charts, boxplots provide much richer statistical summary and directly reveal spread and variation between models,\n"
-      "which are essential for understanding business dynamism among categories.")
-plt.figure(figsize=(18,12))
-sns.set_style('darkgrid')
-sns.boxplot(x=df['Model'],y= df['Sales_Volume'],hue=df['Model'])
-plt.xlabel('Model Sold')
-plt.ylabel('Volume of Sales')
-plt.title('Volume of Sales By Model')
-plt.xticks(rotation =45)
-plt.show()
+---
 
+## Dataset
 
-#Countplot: Fuel_Type vs Transmission
-print("We used countplot to compare fuel type vs transmission.\n"
-      "We used countplot as it is ideal to show frequency of each category.")
-plt.figure(figsize=(14,10))
-sns.set_style('darkgrid')
-ax = sns.countplot(x=df['Fuel_Type'], hue=df['Transmission'])
+The project uses the **BMW Worldwide Sales Records (2010–2024)** dataset available through Kaggle.
 
-plt.title("Fuel_Type vs Transmission")
-plt.xlabel("Fuel_Type")
-plt.ylabel("Vehicle Count")
+**Source:** Kaggle — BMW Worldwide Sales Records 2010–2024
 
-# Add count labels on bars
-for p in ax.patches:
-    height = p.get_height()
-    ax.text(p.get_x() + p.get_width()/2., height + 50, int(height), ha='center', fontsize=12)
+The dataset contains information related to BMW vehicle characteristics and sales performance, including variables such as:
 
-# Legend inside grid, above bars, away from labels
-plt.legend(title='Transmission', loc='upper left', bbox_to_anchor=(1, 1), fontsize=12, title_fontsize=13, frameon=True)
+* Model
+* Year
+* Region
+* Fuel Type
+* Transmission
+* Engine Size
+* Mileage
+* Vehicle Price
+* Sales Volume
 
-plt.tight_layout()
-plt.show()
+---
 
+## Tools & Technologies
 
-#Bar Chart: Distribution of Sales Records by Region
-print("we used bar plot to showcase which region has highest sales records.")
-plt.figure(figsize=(10,6))
-counts = df['Region'].value_counts()
-ax = sns.barplot(x=counts.values, y=counts.index, hue = counts.index)
+* **Python**
+* **Pandas**
+* **NumPy**
+* **Matplotlib**
+* **Seaborn**
+* **SciPy**
+* **Jupyter Notebook**
+* **Statistical Hypothesis Testing**
+* **Exploratory Data Analysis**
 
-# Add labels to bars
-for i, v in enumerate(counts.values):
-    ax.text(v + 5, i, str(v), color='black', va='center')
+---
 
-plt.title('Sales Records Distribution by Region')
-plt.xlabel('Count')
-plt.ylabel('Region')
-plt.show()
+## Project Workflow
 
-#Boxplot: Price Distribution by Region
-print("We used boxplot to showcase price across regions to understand about the pricing dynamics.")
-plt.figure(figsize=(14,8))
-sns.boxplot(x='Region', y='Price_USD', hue = df['Region'],data=df)
-plt.title('Price Distribution by Region')
-plt.xlabel('Region')
-plt.ylabel('Price (USD)')
-plt.xticks(rotation=45)
-plt.show()
+### 1. Data Cleaning
 
-# Correlation Analysis
-print("Correlation Analysis:-")
-print("We used heatmap to show correlation to visualize pairwise relationships and strength between all continuous variables at once.\n"
-      "A heatmap quickly shows all mutual correlations compared to other visualizations and helps to guide further analysis or modeling.")
-correlation = df[["Engine_Size_L", "Mileage_KM", "Price_USD", "Sales_Volume"]].corr()
-print("\nCorrelation matrix:")
-display(correlation)
-plt.figure(figsize=(8, 6))
-sns.heatmap(correlation, annot=True, cmap='coolwarm')
-plt.title("Correlation Heatmap")
-plt.show()
+The dataset was prepared for analysis through several preprocessing steps.
 
-# Hypothesis Testing
-# FuelType vs AveragePrice
-print("Hypothesis Testing:-")
-print("Null Hypothesis - H₀: There is no significant difference in average vehicle price between fuel types (Petrol, Diesel, Electric).\n"
-    "Alternative Hypothesis - Ha: At least one fuel type has a different average price.")
-groups = [y["Price_USD"].values for x, y in df.groupby("Fuel_Type")]
-stat, p = stats.f_oneway(*groups)
-print("ANOVA for Price by Fuel_Type: p-value =", p)
-print("Testing at 95% significance level.")
-if p < 0.05:
-    print("Conclusion: Significant difference in mean prices among fuel types.")
-else:
-    print("Conclusion: No significant difference in mean prices among fuel types.")
+The process included:
 
-# Region vs AveragePrice
-print("\n Null Hypothesis - H₀: The average vehicle price is the same across all regions.\n"
-    "Alternative Hypothesis - Ha: At least one region differs in mean price.")
-groups = [y["Price_USD"].values for x, y in df.groupby("Region")]
-stat, p = stats.f_oneway(*groups)
-print("ANOVA for Price by Region: p-value =", p)
-print("Testing at 95% significance level.")
-if p < 0.05:
-    print("Conclusion:At least one region differs in mean price.")
-else:
-    print("Conclusion: The average vehicle price is the same across all regions.")
+* Identifying missing values
+* Replacing missing numeric values using column means
+* Removing remaining incomplete observations
+* Checking for duplicate records
+* Identifying potential outliers
+* Removing extreme observations using the **Interquartile Range (IQR)** method
 
-# FuelType vs Transmission
-print("\n Null Hypothesis - H₀: Fuel type and transmission are independent.\n"
-    " Alternative Hypothesis - Ha: Fuel type and transmission are associated.")
-contingency = pd.crosstab(df['Fuel_Type'], df['Transmission'])
-chi2, p, dof, ex = stats.chi2_contingency(contingency)
-print("Chi-squared p-value for Fuel_Type vs Transmission:", p)
-print("Testing at 95% significance level.")
-if  p < 0.05:
-    print("Conclusion: Fuel type and transmission are associated.")
-else:
-    print("Conclusion: No association found between fuel type and transmission.")
+Outlier treatment was applied particularly to:
 
-#Time series Analysis
-print("\nWe used lineplot to show the trend of sales over time.\n"
-     "Ideal for trends and time-series analysis,\n"
-      "a lineplot reveals cyclical patterns and long-term changes, which would be missed with a bar chart or point plot.")
-plt.figure(figsize=(18,12))
-sns.set_style('darkgrid')
-sns.lineplot(x = df['Year'],y= df['Sales_Volume'])
-plt.xlabel('Year')
-plt.ylabel('Sales Volume')
-plt.title('Sales Over Time')
-plt.show()
+* `Price_USD`
+* `Sales_Volume`
 
-# 6. Extracting and Summarizing Business Insights
-print("\nBusiness Insights Summary:")
-print("- Petrol and Diesel models show significant price and sales variation by region and model.")
-print("- Statistically significant differences exist in average price by region and by fuel type (see ANOVA p-values).")
-print("- Transmission type distribution differs across fuel types (see chi-squared result).")
-print("- Highest sales volumes are seen in select models and regions across recent years.")
-print("- There is clear time-based cyclicality and recent growth trends in the product line.")
+This helped reduce the influence of extreme observations on the subsequent analysis.
 
-print("\nRecommendations:")
-print("- Focus on promoting top-selling models in rapidly growing regions and track transmission-fuel mix preferences for market targeting.")
-print("- Use regional pricing strategies to optimize profits from regions showing higher average prices.")
-print("- Monitor cyclical sales patterns and inventory accordingly.")
+---
 
+## 2. Exploratory Data Analysis
+
+Descriptive statistics and visual analysis were used to understand the structure and distribution of the data.
+
+The analysis examined:
+
+* Sales performance across BMW models
+* Fuel type and transmission distribution
+* Regional sales activity
+* Regional pricing differences
+* Relationships between numerical variables
+* Changes in sales volume over time
+
+---
+
+## 3. Sales Volume by BMW Model
+
+Boxplots were used to compare the distribution of sales volume across BMW models.
+
+This visualization helps identify:
+
+* Differences in median sales
+* Variation in sales performance
+* Models with more consistent demand
+* Models with unusually high or low sales observations
+
+Unlike a simple average, the boxplot provides insight into both the center and spread of sales performance.
+
+---
+
+## 4. Fuel Type vs. Transmission
+
+The distribution of transmission types was compared across different fuel categories.
+
+This analysis helps identify whether certain fuel technologies are more commonly associated with particular transmission configurations.
+
+Understanding these combinations may support:
+
+* Product portfolio planning
+* Manufacturing decisions
+* Customer segmentation
+* Marketing strategy
+
+---
+
+## 5. Regional Sales Analysis
+
+Sales records were analyzed across geographic regions to identify differences in market activity.
+
+The analysis helps highlight regions with stronger representation in the dataset and provides a foundation for comparing BMW sales performance across markets.
+
+Regional differences may indicate opportunities for:
+
+* Market-specific promotions
+* Inventory allocation
+* Regional product positioning
+* Expansion strategies
+
+---
+
+## 6. Regional Pricing Analysis
+
+Vehicle prices were compared across regions using boxplots.
+
+This analysis evaluates differences in:
+
+* Median price
+* Price variability
+* Regional pricing ranges
+* Potential premium markets
+
+The results can help determine whether different geographic markets support different pricing strategies.
+
+---
+
+## 7. Correlation Analysis
+
+A correlation matrix was created for key continuous variables:
+
+* Engine Size
+* Mileage
+* Vehicle Price
+* Sales Volume
+
+A heatmap was used to visualize the strength and direction of relationships between these variables.
+
+Correlation analysis helps identify which numerical features may move together and provides direction for additional statistical or predictive analysis.
+
+---
+
+## Statistical Analysis
+
+Statistical hypothesis testing was used to determine whether several observed differences in the dataset were statistically meaningful.
+
+A **95% confidence level** was used throughout the analysis.
+
+---
+
+### Hypothesis Test 1: Fuel Type vs. Average Vehicle Price
+
+A one-way **ANOVA** was used to compare average vehicle prices across fuel types.
+
+**Null Hypothesis (H₀):**
+
+There is no significant difference in average BMW vehicle price between fuel types.
+
+**Alternative Hypothesis (H₁):**
+
+At least one fuel type has a significantly different average vehicle price.
+
+This test helps determine whether fuel technology may be associated with different pricing levels.
+
+---
+
+### Hypothesis Test 2: Region vs. Average Vehicle Price
+
+A second one-way **ANOVA** was used to determine whether BMW prices differ significantly across geographic regions.
+
+**Null Hypothesis (H₀):**
+
+Average BMW vehicle prices are the same across all regions.
+
+**Alternative Hypothesis (H₁):**
+
+At least one region has a significantly different average vehicle price.
+
+The analysis found evidence of statistically significant differences in average pricing across regions.
+
+This suggests that regional market characteristics may play an important role in BMW pricing.
+
+---
+
+### Hypothesis Test 3: Fuel Type vs. Transmission
+
+A **Chi-Square Test of Independence** was used to evaluate the relationship between fuel type and transmission.
+
+**Null Hypothesis (H₀):**
+
+Fuel type and transmission type are independent.
+
+**Alternative Hypothesis (H₁):**
+
+Fuel type and transmission type are associated.
+
+The analysis identified an association between these categorical variables, suggesting that transmission configurations are not distributed equally across fuel technologies.
+
+---
+
+## Time-Series Analysis
+
+BMW sales volume was analyzed over time using a line chart.
+
+The analysis was designed to identify:
+
+* Long-term sales trends
+* Periods of growth or decline
+* Cyclical patterns
+* Changes in product demand over time
+
+Understanding these patterns can help organizations improve forecasting and inventory planning.
+
+---
+
+## Key Findings
+
+The analysis produced several important findings:
+
+* BMW vehicle prices vary across both **fuel types and geographic regions**.
+* Statistical testing indicates significant differences in average vehicle prices between certain groups.
+* Fuel type and transmission configuration show evidence of an association.
+* Sales performance varies considerably across BMW models.
+* Certain regions demonstrate stronger sales activity than others.
+* Vehicle pricing differs across regional markets.
+* Sales volume shows noticeable changes and patterns over time.
+* Model, market, pricing, and vehicle characteristics all provide useful dimensions for understanding BMW sales performance.
+
+---
+
+## Business Recommendations
+
+### 1. Develop Regional Pricing Strategies
+
+Because vehicle pricing differs across regions, BMW could consider market-specific pricing approaches rather than applying identical strategies globally.
+
+Regions that consistently support higher average prices may provide opportunities for:
+
+* Premium configurations
+* Higher-value packages
+* Upselling opportunities
+
+---
+
+### 2. Prioritize High-Performing Models
+
+Models demonstrating consistently strong sales should receive greater attention in:
+
+* Marketing campaigns
+* Dealer inventory
+* Production planning
+* Promotional strategy
+
+Lower-performing models should be evaluated to determine whether performance is related to pricing, region, product positioning, or customer preference.
+
+---
+
+### 3. Align Inventory With Regional Demand
+
+Regional differences in sales activity suggest that vehicle allocation should reflect local demand patterns.
+
+BMW could use historical regional sales data to better determine:
+
+* Which models to stock
+* Which fuel types to prioritize
+* Appropriate inventory levels
+* Market-specific product mixes
+
+---
+
+### 4. Monitor Fuel-Type Preferences
+
+As vehicle markets evolve, BMW should continue monitoring demand across:
+
+* Petrol
+* Diesel
+* Electric
+* Other fuel technologies
+
+Understanding changing preferences can improve product development and market positioning.
+
+---
+
+### 5. Incorporate Sales Trends Into Forecasting
+
+Historical time-series patterns can be incorporated into future forecasting models.
+
+This could support:
+
+* Production planning
+* Dealer inventory management
+* Promotional timing
+* Demand forecasting
+* Regional resource allocation
+
+---
+
+## Skills Demonstrated
+
+This project demonstrates practical experience in:
+
+* Data Cleaning
+* Exploratory Data Analysis
+* Data Visualization
+* Outlier Detection
+* Statistical Analysis
+* ANOVA
+* Chi-Square Testing
+* Correlation Analysis
+* Time-Series Analysis
+* Business Analytics
+* Translating Analytical Results into Business Recommendations
+
+---
+
+## Potential Future Enhancements
+
+The project could be expanded by incorporating:
+
+### Predictive Modeling
+
+Build machine learning models to predict:
+
+* Vehicle price
+* Sales volume
+* Regional demand
+
+Potential algorithms could include:
+
+* Linear Regression
+* Random Forest
+* XGBoost
+
+### Customer and Market Segmentation
+
+Clustering techniques could identify groups of vehicles or markets with similar characteristics.
+
+### Interactive Dashboard
+
+The analysis could be transformed into an interactive **Power BI or Tableau dashboard** for exploring:
+
+* Model performance
+* Regional sales
+* Fuel-type trends
+* Pricing patterns
+* Historical performance
+
+### Forecasting
+
+Time-series forecasting models could be developed to estimate future BMW sales demand.
+
+---
+
+## Conclusion
+
+This project demonstrates how exploratory analytics and statistical testing can be applied to automotive sales data to uncover meaningful business patterns.
+
+By analyzing BMW sales across **models, regions, fuel technologies, transmission types, pricing levels, and time**, the project provides insights that could support better decisions in pricing, marketing, product strategy, and inventory management.
+
+The project also demonstrates the ability to move beyond visualization by using formal statistical testing to determine whether observed differences in the data are statistically significant.
+
+---
+
+## Author
+
+**Siddharth Shenoy**
+MS Business Analytics & Information Management
+Purdue University
+
+**Skills:** Python | SQL | Power BI | Machine Learning | Statistical Analysis | Business Analytics
